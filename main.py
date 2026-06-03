@@ -69,7 +69,7 @@ def main():
                 df[commodity]
             )
         )
-        
+
     plot_multiple_time_series(
     yearly_sharpes,
     "Selected Commodities Yearly Sharpe",
@@ -82,6 +82,37 @@ def main():
         noise_ratio,
         "噪音比例对比",
         "noise_ratio.png",
+        "Noise Ratio"
+    )
+
+    yearly_noise = {}
+
+    for commodity in selected:
+
+        yearly_noise[commodity] = (
+            compute_yearly_noise_ratio(
+                df[commodity]
+            )
+        )
+
+    plot_multiple_time_series(
+        yearly_noise,
+        "Selected Commodities Yearly Noise Ratio",
+        "selected_noise_ratio.png"
+    )
+
+    noise_5y = (
+    compute_noise_ratio_period(
+        df,
+        2020,
+        2024
+        )
+    )
+
+    plot_metric(
+        noise_5y,
+        "2020-2024 Noise Ratio",
+        "noise_ratio_5y.png",
         "Noise Ratio"
     )
     #################################################
@@ -97,6 +128,21 @@ def main():
         filename="drawdown_ratio.png",
         xlabel="Drawdown Ratio"
     )
+
+    drawdown_5y = (
+    compute_drawdown_ratio_period(
+        df,
+        2020,
+        2024
+        )
+    )
+
+    plot_metric(
+        drawdown_5y,
+        "2020-2024 Drawdown Ratio",
+        "drawdown_ratio_5y.png",
+        "Drawdown Ratio"
+    )
     #################################################
     gap_ratio = (
         compute_gap_ratios(df)
@@ -109,6 +155,21 @@ def main():
         xlabel="Gap Ratio"
     )
 
+    yearly_drawdown = {}
+
+    for commodity in selected:
+
+        yearly_drawdown[commodity] = (
+            compute_yearly_drawdown_ratio(
+                df[commodity]
+            )
+        )
+
+    plot_multiple_time_series(
+        yearly_drawdown,
+        "Selected Commodities Yearly Drawdown Ratio",
+        "selected_drawdown_ratio.png"
+    )
 
 if __name__ == "__main__":
     main()
