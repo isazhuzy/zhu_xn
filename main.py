@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from cleaning_and_plotting import *
 from metrics import *
 
+
 def main():
 
     df = clean_wind_commodity_data(
@@ -19,6 +20,61 @@ def main():
         "trend_sharpe.png",
         "Trend Sharpe"
     )
+
+    sharpe_5y = (
+    compute_trend_sharpe_period(
+        df,
+        2020,
+        2024
+        )
+    )
+
+    plot_metric(
+        sharpe_5y,
+        "2020-2024 Trend Sharpe",
+        "trend_sharpe_5y.png",
+        "Trend Sharpe"
+    )
+
+    overall_sharpe = (
+    compute_trend_sharpe(df)
+    )
+
+    top2 = (
+        overall_sharpe
+        .sort_values(
+            ascending=False
+        )
+        .head(2)
+        .index
+    )
+
+    bottom2 = (
+        overall_sharpe
+        .sort_values()
+        .head(2)
+        .index
+    )
+
+    selected = (
+    list(top2)
+    + list(bottom2)
+)
+
+    yearly_sharpes = {}
+
+    for commodity in selected:
+        yearly_sharpes[commodity] = (
+            compute_yearly_sharpe(
+                df[commodity]
+            )
+        )
+        
+    plot_multiple_time_series(
+    yearly_sharpes,
+    "Selected Commodities Yearly Sharpe",
+    "selected_commodities.png"
+)
     #################################################
     noise_ratio = compute_noise_ratio(df)
 

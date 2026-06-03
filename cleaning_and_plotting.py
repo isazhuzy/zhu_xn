@@ -115,33 +115,115 @@ def plot_metric(
     plt.close()
 
 
-def main() -> None:
+def plot_time_series(
+    metric: pd.Series,
+    title: str,
+    filename: str
+):
+    """
+    line graph
+    """
 
-    filepath = (
-        "Copy of wind品种指数数据(1).xlsx"
+    plt.figure(figsize=(10,6))
+
+    metric.plot(
+        marker="o"
     )
 
-    print("Loading data...")
-    df = clean_wind_commodity_data(
-        filepath
+    plt.title(title)
+
+    plt.ylabel(
+        "Trend Sharpe"
     )
 
-    print(
-        f"Loaded {len(df)} rows and "
-        f"{len(df.columns)} commodities."
+    plt.tight_layout()
+
+    plt.savefig(
+        filename,
+        dpi=300,
+        bbox_inches="tight"
     )
 
-    # ------------------------------------
-    # Trend Sharpe
-    # ------------------------------------
+    plt.show()
 
-    trend_sharpe = (
-        compute_trend_sharpe(df)
+    plt.close()
+def plot_multiple_time_series(
+    data_dict: dict,
+    title: str,
+    filename: str
+    ) -> None:
+    """
+    Plot multiple time series
+    on the same figure.
+    """
+
+    plt.rcParams["font.sans-serif"] = [
+        "PingFang HK"
+    ]
+
+    plt.rcParams["axes.unicode_minus"] = False
+
+    plt.figure(figsize=(12, 8))
+
+    for label, series in data_dict.items():
+
+        plt.plot(
+            series.index,
+            series.values,
+            marker="o",
+            label=label
+        )
+
+    plt.legend()
+
+    plt.title(title)
+
+    plt.ylabel("Trend Sharpe")
+
+    plt.tight_layout()
+
+    plt.savefig(
+        filename,
+        dpi=300,
+        bbox_inches="tight"
     )
 
-    print("\nTop 10 Trend Sharpe:")
-    print(
-        trend_sharpe
-        .sort_values(ascending=False)
-        .head(10)
+    plt.show()
+    plt.close()
+
+def plot_multiple_yearly_sharpes(
+    df,
+    commodities
+    ):
+
+    plt.figure(figsize=(12,8))
+
+    for commodity in commodities:
+
+        yearly_sharpe = (
+            compute_yearly_sharpe(
+                df[commodity]
+            )
+        )
+
+        plt.plot(
+            yearly_sharpe.index,
+            yearly_sharpe.values,
+            marker="o",
+            label=commodity
+        )
+
+    plt.legend()
+
+    plt.title(
+        "Yearly Trend Sharpe"
     )
+
+    plt.tight_layout()
+
+    plt.savefig(
+        "selected_commodities_sharpe.png",
+        dpi=300
+    )
+
+    plt.show()

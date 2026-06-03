@@ -28,6 +28,56 @@ def compute_trend_sharpe(
 
     return sharpe.sort_values()
 
+def compute_trend_sharpe_period(
+    df: pd.DataFrame,
+    start_year: int,
+    end_year: int
+) -> pd.Series:
+    """
+    Compute trend Sharpe over a specific period.
+    """
+
+    period_df = df.loc[
+        f"{start_year}-01-01":
+        f"{end_year}-12-31"
+    ]
+
+    return compute_trend_sharpe(
+        period_df
+    )
+
+def compute_yearly_sharpe(
+    close: pd.Series
+    ) -> pd.Series:
+    """
+    Compute yearly Sharpe ratio
+    for one commodity.
+    """
+
+    results = {}
+
+    years = sorted(
+        close.index.year.unique()
+    )
+
+    for year in years:
+        year_data = (
+            close[
+                close.index.year == year
+            ]
+        )
+        if len(year_data) < 20:
+            continue
+        ret = year_data.pct_change()
+        sharpe = (
+            np.sqrt(252)
+            * ret.mean()
+            / ret.std()
+        )
+        results[year] = sharpe
+
+    return pd.Series(results)
+###############################################################################
 def compute_noise_ratio(
     df: pd.DataFrame
 ) -> pd.Series:
