@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 """
 containing all the metrics computation
 """
+#===========================================================
+# trend sharpe
+#===========================================================
 def compute_trend_sharpe(
     df: pd.DataFrame
 ) -> pd.Series:
@@ -77,7 +80,9 @@ def compute_yearly_sharpe(
         results[year] = sharpe
 
     return pd.Series(results)
-###############################################################################
+#===========================================================
+# noise ratio
+#===========================================================
 def compute_noise_ratio(
     df: pd.DataFrame
 ) -> pd.Series:
@@ -90,8 +95,6 @@ def compute_noise_ratio(
     noise ratio = ATR percentage / 20-day directional move
     ATR % = ATR_{14} / price
     directional move = abs(P_t - P_{t-20} / P_{t-20})
-
-    small noise ratio == smooth trend
     """
 
     ret = df.pct_change()
@@ -178,14 +181,20 @@ def compute_noise_ratio_period(
     )
 
 
-###############################################################################
-
+#===========================================================
+# drawdown
+#===========================================================
 def compute_drawdown_structure_ratio(
     close: pd.Series
 ) -> float:
     """
     Compute drawdown structure ratio
     for a single commodity.
+
+    drawdown-structure ratio = abs(max_drawdown) / abs(net_move)
+    calculating how much pain was endured per unit of net travel
+
+    lower = cleaner
     """
 
     nav = (
@@ -218,6 +227,9 @@ def compute_drawdown_structure_ratio(
 def compute_drawdown_structure_ratios(
     df: pd.DataFrame
 ) -> pd.Series:
+    """
+    calculating drawdown ratios of all commodities
+    """
 
     ratios = {}
 
@@ -289,7 +301,9 @@ def compute_drawdown_ratio_period(
             period_df
         )
     )
-###############################################################################
+#===========================================================
+# gap ratio
+#===========================================================
 
 def compute_gap_ratio(
     close: pd.Series,

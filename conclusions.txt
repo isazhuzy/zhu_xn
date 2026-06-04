@@ -1,29 +1,7 @@
-Here's a comprehensive analysis of all 10 figures:Here is the full read-through of what the data is telling you:
+Gold has the cleanest trend:
+- lowest drawdown-structure ratio of 0.15
+- top buy-and-hold sharpe (0.64)
 
-**What the screening framework is doing**
+Silver, tin, and LPG also score well.
 
-The five charts (drawdown ratio, gap ratio, noise ratio, 5Y trend Sharpe, and trend fluency) are collectively a tradability filter for trend-following strategies on Chinese commodity futures. The goal is to identify markets where price moves in sustained, clean, exploitable directions — rather than noisy, gappy, or mean-reverting price series.
-
-**Cross-sectional observations (Images 1–3, 5–6)**
-
-The drawdown ratio chart ranks markets by how badly trend strategies get whipsawed. Urea, logs, and coking coal top that list badly — their ratio exceeds 20–160x, meaning the strategy loses a disproportionate amount relative to what it makes before recovering. The bottom of the list (gold, tin, silver, etc.) are your most trend-friendly markets on this metric.
-
-The gap ratio measures how frequently price jumps overnight through limit-up or limit-down events, which ruins entry/exit execution. The shipping index (集运指数) sits at a worrying 0.55, meaning more than half its trading days feature significant gap moves — this is a structural execution hazard. Noble metals like gold and corn have almost no gaps.
-
-The noise ratio captures how much daily price movement is "noise" vs. sustained directional move. Platinum, palladium, and sheet glass are the noisiest; the shipping index is actually the cleanest at 0.22, which is unusual given its high gap ratio — it gaps but then trends clearly.
-
-**The four selected commodities specifically (Images 4, 7–10)**
-
-These four — propylene, shipping index, industrial silicon, and live hog — were clearly selected because they represent edge cases that need deeper scrutiny:
-
-The shipping index had an extraordinary 2023 (Sharpe ~3.1) driven by post-Covid freight rate surge, then collapsed to near zero in 2025 before recovering strongly in 2026 (~2.35). The trend fluency of 1.01 is the second-best in the universe. The concern is execution: 0.55 gap ratio is a real cost and risk management challenge.
-
-Propylene only has data from 2025, so the 2025–2026 period is the entire history. The trend has been consistently improving from −1.5 to +2.4 in just one year — essentially a straight line upward (Image 7). This looks mechanically like a single sustained trending move, not a stable backtested pattern. High fluency (1.21) but the track record is too short to rely on.
-
-Industrial silicon has been anti-trend since the day it listed. Sharpe was −2.5 in 2022, improved to around −1 by 2023–2024, and is now approaching −0.1 in 2026. It is recovering, but it has never had a positive year. The 5Y Sharpe of −1.10 and fluency of −0.87 make it the clearest exclusion from a trend-following universe.
-
-Live hog is more nuanced. 2022 was good (0.54 Sharpe) due to the African swine fever recovery cycle, but 2023–2025 were consistently negative around −0.5 to −0.7. 2026 is recovering to about +0.25. The noise and gap profiles are actually quite clean — the problem is that hog prices in China are driven by breeding cycles and policy intervention that are fundamentally mean-reverting over most horizons.
-
-**The overarching conclusion**
-
-The universe is being filtered down to markets that are clean enough for trend strategies to work after transaction costs. Most of the universe (the middle of the 5Y Sharpe chart) clusters between 0.05 and 0.5 — acceptable but not exciting. The top handful (多晶硅 at 11.07, 氧化铝 at 1.56, 原木 at 1.25) are exceptional, driven by structural commodity shocks in 2022–2023. The four highlighted commodities were likely flagged precisely because they sit at the margins — either promising but unproven (propylene, shipping index) or structurally unsuitable (silicon, hog) — requiring a deliberate include/exclude decision rather than automatic ranking.
+only 18/26 contracts have the full story
