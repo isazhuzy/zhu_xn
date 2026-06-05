@@ -58,7 +58,6 @@ def compute_yearly_sharpe(
     """
 
     results = {}
-
     years = sorted(
         close.index.year.unique()
     )
@@ -389,10 +388,6 @@ Figures produced:
     fig_four_dim_yearly.png     2x2 panel: Sharpe / noise / drawdown / gap
 """
 
-# =============================================================================
-# METRICS  (computation — mirrors / extends your metrics module)
-# =============================================================================
-
 def compute_yearly_gap_ratio(
     close: pd.Series,
     threshold: float = 0.02,
@@ -483,6 +478,15 @@ def yearly_metric_table(
         if col in df.columns
     }
 
-
-
-
+# =============================================================================
+# TSMOM
+# =============================================================================
+def tsmom_sharpe(close, lookback=120, vol_lookback=60, vol_target=0.15, max_leverage=3.0):
+    close = close.dropna()
+    ret = close.pct_change()                                  # daily returns
+    signal = np.sign(close.pct_change(lookback))              # +1 / -1 direction
+    realized_vol = ret.rolling(vol_lookback).std() * np.sqrt(252)   # annualized vol
+    scale = (vol_target / realized_vol).clip(upper=max_leverage)    # position size
+    position = (signal * scale).shift(1)                      # lag 1 day, no look-ahead
+    strat_ret = (position * ret).dropna()                     # strategy P&L
+    return np.sqrt(252) * strat_ret.mean() / strat_ret.std()  # annualized Sharpe
