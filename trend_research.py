@@ -40,8 +40,6 @@ original conclusions:
 
   ISSUE 6  No out-of-sample validation. A metric is only useful for
            SELECTION if it predicts future behaviour. -> `predictive_validity`.
-
-Run directly:  python trend_research.py /path/to/wind.xlsx
 """
 
 from __future__ import annotations
