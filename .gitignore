@@ -1,0 +1,20 @@
+# OS / editor
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Binary wheels (re-installable, not source)
+*.whl
+
+# Large raw tick exports — exceed GitHub's 100MB limit, keep local only
+ticker/sources/
+ICIFIHIM/
+
+# DolphinDB raw dumps that are too big to version (keep local)
+*_20230104_20230304.csv
+
+# DB credentials — local only
+ddb_config.py
