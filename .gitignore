@@ -16,6 +16,17 @@ ICIFIHIM/
 # DolphinDB raw dumps that are too big to version (keep local)
 *_20230104_20230304.csv
 
+# Big intermediate CSVs moved to iCloud (~/Library/.../xn-data/) — keep repo light
+intraminute/minute_conditional_isoos.csv
+intraminute/step3_extcurve.csv
+intraminute/step2_twomin.csv
+intraminute/minuteofday_allmonths.csv
+intraminute/minute_of_day_pnl_isoos.csv
+ticker/open_breakdown/open_ticks_2months.csv
+ticker/open_breakdown/open_bars_all_2015_2026.csv
+ticker/open_breakdown/day_bars_2months.csv
+ticker/momentum_stats/buckets_all.csv
+
 # DB credentials — local only
 ddb_config.py
 
