@@ -1,139 +1,110 @@
-# future/ — IM tick "follow-through" study
+# future/ — IM tick 反转研究（价格脉冲 + 成交量爆发）
 
-> **Living document.** We update this as the study grows. Status: **pass 1 complete**
-> (price-pulse + volume-peak follow-through on IM, full history).
+> **活文档。** 随研究推进更新。状态：**EXP1 / EXP2 主体完成**，结论="真实可验证的反转结构、净利尚未验证"。
 
-This folder asks one question on **IM0000** (中证1000 stock-index futures, the most
-volatile of the four CFFEX contracts):
-
-> When something *sudden* happens in the tape — a sharp price move, or a burst of
-> volume — **does it lead to more of the same (a trend), or does it snap back
-> (reversal)?**
-
-We test this at the **tick** level (one row per 500 ms market snapshot, ~120/minute).
+**一个问题**：在 IM tick 数据上，当盘口突然发生一件事——**价格猛跳**（EXP1）或**成交量爆发**（EXP2）——之后价格是**延续（趋势）**还是**反转**？
 
 ---
 
-## Quant 101 — the ideas behind this
+## 0. 数据范围（务必先看）
 
-- **Tick.** The exchange publishes a snapshot ~every 500 ms: best bid/ask, last
-  price, volume traded since the previous snapshot. ~120 ticks per trading minute.
-- **Mid price.** `mid = (bid + ask) / 2`. We measure moves in mid, not last-trade,
-  so a single print bouncing between bid and ask doesn't masquerade as a "move."
-- **Momentum vs mean-reversion.** Two opposite hypotheses about short-horizon prices:
-  - *Momentum / follow-through / trend:* a move up tends to be followed by more up.
-  - *Mean-reversion:* a move up tends to be followed by a pull-back down.
-  Which one wins depends on the **horizon** and the **size** of the trigger — finding
-  *where* the line sits is the whole game.
-- **Signing the forward return.** A raw forward return averages to ~0 (up and down
-  cancel). The trick: multiply the forward return by the **direction of the trigger**.
-  `signed = dir × (price_later − price_now)`.
-  - `signed > 0` → price kept going the trigger's way → **trend / follow-through**.
-  - `signed < 0` → price reversed the trigger → **mean-reversion**.
-  This aligns up-triggers and down-triggers so they reinforce instead of cancel.
-- **Why a t-stat, not just a mean.** With millions of observations even a microscopic
-  mean can be "real." The **t-stat** = mean / standard-error tells you how many
-  standard errors the mean sits from zero. `|t| > ~2` ≈ statistically significant;
-  here we see `t` of 10–20, so the *direction* is not luck. But significant ≠ tradeable
-  (next point).
-- **Gross vs net — the spread caveat (the thing that kills most "edges").** Every
-  round trip pays the **bid-ask spread**. For IM that is **~1.0 index point**. Our
-  edges below are **0.02–0.06 pts** — i.e. *inside* the spread. So they are **real
-  structure** (the market genuinely behaves this way) but **not money** once you pay
-  to trade. We always quote results **gross** and flag this.
-- **Don't let windows cross gaps.** A lookback/forward window must not span the lunch
-  break (11:30–13:00) or an overnight gap, or you'd "predict" across a halt. We compute
-  everything inside contiguous **(day, session)** blocks (AM 09:30–11:30, PM 13:00–15:00).
-
----
-
-## EXP1 — Price pulse: does a move lead to a trend?
-
-**Construction.** At each tick `i`:
-1. **Lookback** `n` ticks: `back = mid[i] − mid[i−n]` (the "pulse").
-2. **Trigger** only if `|back|` exceeds a threshold `k` (in index points). `dir = sign(back)`.
-3. **Forward** `x` ticks: `signed = dir × (mid[i+x] − mid[i])`.
-4. Average `signed` over all of history, per `(n, k, x)`.
-
-**The three knobs (each varied while the other two are fixed — see `fig_price_pulse.png`):**
-- `n` = how far back we measure the pulse (5, 10, 20, 40 ticks)
-- `k` = how big the pulse must be to count (0, 0.2, 0.4, 0.8, 1.6 pts; `k=0` = every tick)
-- `x` = how far forward we look (5, 10, 20, 40, 80, 120 ticks)
-
-**What we found (full history, ~22M tick-events):**
-- **Fast, small moves TREND.** Short lookback (`n=5`) over the next ~10 ticks →
-  `+0.043 pts, t≈18`. Raising `k` up to ~0.4 keeps/strengthens it: a clean quick
-  push continues.
-- **Slow or huge moves REVERSE.** Long lookback (`n=40`) at long horizon (`x=80–120`)
-  → `−0.03 to −0.06 pts, t≈−8`. An outsized pulse (`k=1.6`) flips negative too
-  (`−0.017, t=−2.4`).
-- **One picture:** `fig_price_heatmap.png` — solid **red** (trend) in the top row
-  (small `n`), grading to **blue** (reversal) bottom-right (large `n`, long `x`).
-- **Interpretation:** IM has a **fast-momentum / slow-reversion** structure. Quick
-  order-flow imbalance carries for a few seconds; anything large or drawn-out is
-  liquidity being *taken* and then *given back*.
-
----
-
-## EXP2 — Volume peak: what happens after a volume burst?
-
-**Construction.** Compare a **short** trailing volume window to a **long** one:
-`spike = (V_t1 / t1) / (V_t2 / t2)` = recent per-tick volume ÷ its longer baseline
-(`t2 > t1`). A **peak** is `spike > r`. After a peak we measure, over the next `x` ticks:
-- **|forward move|** — does a peak precede *volatility* (a bigger move, either way)?
-- **signed forward move** (signed by the short-window price direction) — continuation
-  or reversal *after* the burst?
-- **forward volume/tick** — does the burst *persist* (volume clusters) or die out?
-
-`r="ALL"` is the every-tick baseline so peak rows read *relative* to normal.
-
-**The knobs (change `t1`/`t2` one at a time — see `fig_volume.png`):**
-- `(t1, t2)` pairs: (5,30) (5,60) (5,120) (10,60) (10,120) (20,120)
-- `r` = spike threshold (1.5, 2.0, 3.0); `x` = forward horizon (10, 20, 60 ticks)
-
-**What we found:**
-- **Volume → volatility (strong, monotone).** The bigger the peak, the bigger the
-  forward move. Extreme spikes (`t1=20,t2=120,r=3.0,x=60`): `|move| = 7.1 pts vs 3.0
-  baseline` (~2.4×). A volume burst reliably *front-runs* a big move.
-- **Big sustained peaks = EXHAUSTION.** Signed forward move is mildly positive at
-  baseline (+0.04) but flips **negative** as the peak grows (`−2.14, t=−5.3` at the
-  extreme): a large surge tends to *spend* the move and reverse it.
-- **Volume clusters** when the spike is measured over a *longer* short window
-  (`t1=10–20`): forward volume stays high (4–5 vs 3.3). A 5-tick blip is transient.
-
----
-
-## Bottom line so far
-
-1. IM short-horizon prices are **fast-momentum, slow-reversion** — and the crossover
-   in `(n, k, x)` is clean and highly significant.
-2. **Volume peaks predict volatility**, and **large peaks mark exhaustion** (reversal).
-3. **All gross.** Every edge here is **≤ 0.06 pts**, inside IM's ~1.0 pt spread →
-   confirmed *structure*, **not a net-tradeable signal** on its own. Next passes
-   should look for places the structure is large enough, or combinable, to clear costs.
-
----
-
-## Files
-
-| file | what |
+| 项 | 内容 |
 |---|---|
-| `im_followthrough_ddb.py` | fetch IM ticks from DolphinDB + compute both experiments → CSVs. Run on `../.venv` with the sandbox OFF. |
-| `im_followthrough_plot.py` | build the figures from the CSVs. Run on system `python3` (has matplotlib). |
-| `price_trend.csv` | EXP1 accumulators: `code,n,k,h, s_sum,s_ss,s_n,hits` (mean = `s_sum/s_n`). |
-| `volume_peak.csv` | EXP2 accumulators: `code,t1,t2,r,h,n_peak, a_*`(abs move) `g_*`(signed) `v_*`(fwd vol). |
-| `figs/fig_price_pulse.png` | EXP1: vary `n` / `k` / `x`, each fixing the other two. |
-| `figs/fig_price_heatmap.png` | EXP1: `n × x` grid — the trend↔reversal regime map. |
-| `figs/fig_volume.png` | EXP2: change `t1` / `t2` one at a time, lines = peak strength. |
-| `im_followthrough.log` | run log of the full-history sweep. |
-| `ddb_config.py` | local DolphinDB credentials (gitignored). |
+| 合约 | **IM0000**（中证1000 股指期货连续主力）——**只在 IM 上验证过**，未跨 IC/IF/IH |
+| 时间跨度 | **2022-07 ~ 2026-05，47 个月（≈4 年）**；IM 2022-07 才上市 |
+| 频率 | **500 毫秒 / tick**（快照），约 120 tick/分钟 |
+| 样本量 | 每格最多约 **2200 万次 tick 事件** |
+| 字段 | mid=(买一+卖一)/2；成交量 = `m_iVolume`（**成交量 volume，不是持仓量**） |
+| 数据源 | DolphinDB `dfs://hft_future_ts` / `TickPartitioned` |
+| 缺口 | 2023-07 整月缺数；2024-02 有重复时间戳（已 drop） |
+| 时段 | 上午 09:30–11:30 + 下午 13:00–15:00，窗口不跨午休/隔夜（按 (day,session) 分块）；丢开盘集合竞价 |
 
-**CSVs store sum / sum-of-squares / count** (not means) so any subset can be
-re-aggregated and given a t-stat downstream:
-`mean = sum/n`, `se = sqrt(ss/n − mean²) / sqrt(n)`, `t = mean/se`.
+---
 
-## Data notes
-- Table `dfs://hft_future_ts` / `TickPartitioned`, IM exists from **2022-07**.
-- Per-tick volume column is `m_iVolume` (incremental, not accumulated).
-- 2024-02 has duplicate timestamps (we `drop_duplicates("ts")`); 2023-07 is a data gap.
-- EXP2 drops each session's first tick (opening-auction volume burst) via `i ≥ t2`.
+## 1. 量化基础（读图必备）
+
+- **符号化未来收益**：原始未来收益正负抵消≈0。乘上触发方向 `signed = sign(脉冲方向) × (mid[i+x] − mid[i])`：`>0` 延续，`<0` 反转。这样涨/跌触发对齐，平均后才看得见结构。
+- **均值 ≠ 胜率（最关键的区分）**：
+  - **均值** = 每次触发后 `signed` 的平均 = **逆势做一笔的期望毛收益（点，¥200/点）**。
+  - **胜率** = 多少比例的单次真的反转（`signed<0`）。
+  - 本研究的反转：**均值显著为反转，但胜率只有 ~49%**（比抛硬币略差）→ 正期望靠**少数反转幅度极大（右尾/赔率）**，不是靠频率。
+- **t 值 = 均值 ÷ 标准误 = 离 0 几个标准误**。|t|>2 显著。但**显著 ≠ 能赚**（显著说方向真实，不说幅度盖过成本）。
+- **价差天花板**：IM 一个来回 ≈ **1.0 指数点**。大部分边际 ≤ 价差 → 是**结构不是钱**。
+
+---
+
+## 2. EXP1 — 价格脉冲
+
+**构造**：tick i 处，回看 n 个 tick 的脉冲 `back = mid[i]−mid[i−n]`；`|back|>k`（k=价格tick，1 tick=0.2点）才触发；看未来 x 个 tick 的符号化收益。网格 **n≤30、k≤90 价格tick（=18点）、x∈{2,5,10,20,40,80,120}**，价格已**去坏tick**。
+
+**结论**
+1. **有 hardline**：脉冲超过 **≈1.2~1.6 点（k≈6~8 tick，n≥2；n=1 更低）** 后，均值翻成**反转**；以下是**趋势/延续**。
+2. **越大的脉冲 → 越深的反转**，单调；最强可靠格（去坏tick后）：`n=10,k=6点 → −2.09`、`n=30,k=9点 → −1.41`（样本 15万~26万）——**毛幅度已超过价差**。
+3. **反转随 x 加深、约 40 秒（x≈80）见顶**；趋势约 5 秒（x≈10）到顶后走平。
+4. **两种反转区不同质**：小 n+大 k 靠**罕见巨幅**（胜率<45%，最易掺坏 tick）；大 n+大 k 才**勉强过半（~52%）**。
+5. ⚠️ **胜率只有 ~49%** → 期望反转线存在，**"大概率反转"线不存在**（赔率边际，非胜率）。
+
+**图**：`fig_pulse_nk_mean.png`（n×k 均值，红趋势/蓝反转）、`fig_pulse_nk_t.png`（t/清晰度）、`fig_pulse_nkx_byN.png`/`byK.png`（n×k×x 全貌：固定 n 或 k，看 x）、`fig_pulse_hardline.png`（hardline + 胜率图：胜率几乎全<50%）。
+
+---
+
+## 3. EXP2 — 成交量爆发
+
+**构造**：短窗 t1 vs 长窗 t2（t2>t1、t2 含 t1）的成交量比定义"爆发"。触发用**成交量**，反转测**价格**（`signed = sign(mid[i]−mid[i−t1])×(mid[i+x]−mid[i])`）。
+
+**两种算法（结果一致区相同，分歧在跨窗口）**
+- **算法A `norm`（每tick平均量比，量/时间）**：`spike=(V_t1/t1)/(V_t2/t2)`，基线=1，峰值 spike>r（r=1.5/2/3=几倍平时）。**跨窗口可比、样本稳、t 可信**。
+- **算法B `total`（原始总量占比）**：`spike=V_t1/V_t2`，基线=t1/t2，峰值 spike>r（占比）。**跨窗口不可比**：同一占比在不同窗口含义不同，极端阈值**样本崩塌+安静期假爆发**（用未来量 fvol 识别）。
+- **关系**：`norm = total × (t2/t1)`，对固定窗口完全等价。
+
+**结论**
+1. **反转主驱动是 t1（放量持续时长）；t2（基线长度）次要**。
+2. **代表性阈值（用 norm，可移植）**：**最近成交强度 ≥ 2× 平时（spike>2）且 t1≥~20 tick（≈10秒）** → 期望反转。
+3. **反转随 x 加深、约 40~60 秒见顶**；放量本身短暂（约 30 秒散回基线）。
+4. ⚠️ 同 EXP1：**可靠格的反转均值小（≤~1点、在价差内）、胜率 ~49%**；total 的"大反转"都落在小样本/肥尾里、不可信。
+
+**图**：`fig_volume_burst.png`（基线对齐版）、`fig_sweep_t1.png`/`fig_sweep_t2.png`（固定一个扫另一个 × 两算法）、`fig_exp2_x_norm.png`/`fig_exp2_x_total.png`（窗口×比率×x 小多图）。
+
+---
+
+## 4. 总结 + 三条核心 caveat
+
+**正面**：IM 上"大扰动→反转"是**真实、跨月稳定、过滤坏tick后仍在、t 高度显著**的微观结构；价格脉冲与成交量爆发是它的两个视角。
+
+**caveat（结论的边界）**
+1. **赔率不是胜率**：胜率 ~49%，正期望全靠右尾幅度。能画"期望反转线"，画不出"大概率反转线"。
+2. **价差天花板**：可靠反转大多 ≤ ~1.0 点价差。少数毛幅度超价差的格（EXP1 的 −1.4~−2.1 点）是唯一线索，但**未做含真实成本/滑点/分年度的净回测** → 现状是"净利未验证"，不是"确定不赚"。
+3. **量 vs 价混淆**：EXP2 的"放量→反转"测价格、触发用量；量价大 move 高度相关，**成交量是否有独立预测力尚未验证**（需控制价格脉冲大小再看量）。
+
+**开放问题**：见 [`QUESTIONS.md`](QUESTIONS.md)（Q1 机制+能否交易；Q2 负胜率正期望策略怎么做）。
+
+---
+
+## 5. 文件清单
+
+**EXP1（价格脉冲）**
+| 文件 | 作用 |
+|---|---|
+| `exp1_nk_ddb.py` / `exp1_nk_clean_ddb.py` | n×k 网格（x=10），后者去坏tick → `exp1_nk.csv` / `exp1_nk_clean.csv`（canonical） |
+| `exp1_nkx_ddb.py` | n×k×x 三维网格（去坏tick）→ `exp1_nkx.csv` |
+| `exp1_nk_plot.py` / `exp1_nkx_plot.py` / `exp1_hardline_plot.py` | 出图（默认读净化版） |
+
+**EXP2（成交量爆发）**
+| 文件 | 作用 |
+|---|---|
+| `exp2_burst_ddb.py` | V_t2/V_t1 爆发版（基线对齐≈5）→ `exp2_burst.csv` |
+| `exp2_sweep_ddb.py` | 固定t1扫t2 / 固定t2扫t1 × 两算法 → `exp2_sweep.csv` |
+| `exp2_x_ddb.py` | 窗口×比率×x × 两算法（含胜率 rhits）→ `exp2_x.csv` |
+| `exp2_burst_plot.py` / `exp2_sweep_plot.py` / `exp2_x_plot.py` | 出图 |
+
+**基础/共用**：`im_followthrough_ddb.py`（最初版，定义 `fetch`/`session_blocks`/`WINDOWS`，被其它脚本 import）；`ddb_config.py`（本地凭据，gitignored）；`QUESTIONS.md`。
+
+**约定**：CSV 存 **sum / sum-of-squares / count**（不是均值），便于下游重聚合 + t：`mean=sum/n`，`se=sqrt(ss/n−mean²)/√n`，`t=mean/se`。
+
+---
+
+## 6. 技术注记
+- **取数**：用 `../.venv`（python3.12 + dolphindb），**必须关沙箱**（LAN 服务器）。
+- **画图**：system `python3`（有 matplotlib）。
+- **坏 tick 过滤**：单点尖峰（mid 单 tick 跳变>4点且两侧同向、会回弹）→ 邻居均值替换；全样本仅去 ~0.006%，可靠格不变。
+- **运行**：`*_ddb.py` 取数+算 → CSV；`*_plot.py` 读 CSV → 图。

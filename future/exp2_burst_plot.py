@@ -93,11 +93,11 @@ for ci, colfn in enumerate([col_scale, col_ratio, col_horizon]):
 axes[0, 0].legend(title="峰值强度（越小越爆发）", fontsize=7.6, title_fontsize=8.4, loc="best")
 fig.suptitle("实验2（V_t2/V_t1 爆发版，基线 t2/t1≈5）放量爆发之后对随后 ticks 的影响　"
              "IM 中证1000 · 2022-07..2026-05", fontsize=12.5, y=1.0)
-fig.text(0.5, -0.03,
-         "峰值定义：spike = V_t2/V_t1（t2 含 t1），基线=t2/t1≈5；越接近 1 越爆发，事件 = spike < r。"
-         "红 ✗ = 样本<5万、不可靠（多为安静期假爆发）。\n"
-         "单位：t1/t2/x 为 tick（500毫秒/个）；①②为指数点（1点=¥200/手）；③为手。y 轴已按行裁剪。",
-         ha="center", va="top", fontsize=8.3, color="#333333")
+fig.text(0.5, -0.035,
+         "峰值定义：spike = V_t2/V_t1 =（过去 t2 笔总量）÷（过去 t1 笔总量），t2 含 t1，基线=t2/t1≈5；越接近 1 越爆发，事件 = spike < r。\n"
+         "行指标：①波动 = |mid[i+x]−mid[i]| 平均；②方向 = sign(mid[i]−mid[i−t1])×(mid[i+x]−mid[i])，＋延续/−反转；③未来 x 笔每 tick 量。\n"
+         "单位：t1/t2/x 为 tick（500毫秒/个）；①②为指数点（1 点 = 每手 ¥200）；③为手。红 ✗ = 样本<5万、不可靠（多为安静期假爆发）。y 轴按行裁剪。",
+         ha="center", va="top", fontsize=8.0, color="#333333")
 fig.tight_layout(); fig.savefig(f"{FIG}/fig_volume_burst.png", dpi=130, bbox_inches="tight")
 plt.close(fig)
 print(f"saved {FIG}/fig_volume_burst.png")
