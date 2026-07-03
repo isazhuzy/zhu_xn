@@ -3,6 +3,11 @@
 
 A from-scratch guide for a quant beginner, built around the code in `xn/prediction/`.
 
+> Paper #1 of a four-paper series — see `README.md` for the map, then
+> `STUDY_GUIDE_QI.md` (#2, queue imbalance → direction), `STUDY_GUIDE_VOI.md`
+> (#3, VOI/OIR/MPB → out-of-sample forecast), `STUDY_GUIDE_MICROPRICE.md`
+> (#4, the micro-price fair value).
+
 ---
 
 ## 0. The one-sentence idea
