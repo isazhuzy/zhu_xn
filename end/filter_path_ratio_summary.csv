@@ -1,0 +1,9 @@
+code,group,best_hm,n,mean_bp,win_reversal,t
+IC0000,"smooth (ratio<=median, efficient trend)",14:44,111.0,-1.099,0.468,-0.22
+IC0000,"noisy (ratio>median, choppy path)",13:00,52.0,-247.082,0.596,-1.84
+IF0000,"smooth (ratio<=median, efficient trend)",14:42,111.0,-3.904,0.532,-0.81
+IF0000,"noisy (ratio>median, choppy path)",14:38,163.0,-6.989,0.577,-1.75
+IH0000,"smooth (ratio<=median, efficient trend)",14:59,74.0,0.204,0.378,0.32
+IH0000,"noisy (ratio>median, choppy path)",13:11,56.0,-135.592,0.554,-1.37
+IM0000,"smooth (ratio<=median, efficient trend)",14:59,48.0,-0.138,0.396,-1.32
+IM0000,"noisy (ratio>median, choppy path)",13:37,31.0,-1.438,0.452,-0.06

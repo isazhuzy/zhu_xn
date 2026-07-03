@@ -1,0 +1,17 @@
+effect,code,hm,full_n,full_mean_bp,full_win_rev,full_t,ex15_n,ex15_mean_bp,ex15_win_rev,ex15_t
+A. plain reversal-hunt (best min),IC0000,14:42,312,-34.422,0.474,-1.54,249,2.108,0.442,0.87
+B. path-ratio 'noisy' subsample,IC0000,13:00,52,-247.082,0.596,-1.84,36,-147.498,0.528,-1.07
+C. calm-day (real-time range),IC0000,14:29,36,-6.647,0.639,-1.76,35,-6.548,0.629,-1.68
+D. closing continuation @14:55,IC0000,14:55,307,-12.537,0.371,-0.78,246,3.67,0.35,4.15
+A. plain reversal-hunt (best min),IF0000,14:39,273,-4.849,0.538,-1.61,206,-1.018,0.529,-0.44
+B. path-ratio 'noisy' subsample,IF0000,14:38,163,-6.989,0.577,-1.75,122,0.133,0.566,0.06
+C. calm-day (real-time range),IF0000,13:00,46,-16.705,0.63,-1.31,41,-13.467,0.634,-1.08
+D. closing continuation @14:55,IF0000,14:55,276,3.748,0.402,3.9,215,3.147,0.386,4.25
+A. plain reversal-hunt (best min),IH0000,13:00,156,-43.102,0.519,-1.16,117,7.834,0.496,0.83
+B. path-ratio 'noisy' subsample,IH0000,13:11,56,-135.592,0.554,-1.37,36,4.162,0.5,0.26
+C. calm-day (real-time range),IH0000,13:31,33,-12.693,0.576,-1.24,31,-12.205,0.581,-1.21
+D. closing continuation @14:55,IH0000,14:55,215,4.306,0.363,3.58,176,5.347,0.33,5.58
+A. plain reversal-hunt (best min),IM0000,13:37,96,2.481,0.448,0.25,96,2.481,0.448,0.25
+B. path-ratio 'noisy' subsample,IM0000,13:37,31,-1.438,0.452,-0.06,31,-1.438,0.452,-0.06
+C. calm-day (real-time range),IM0000,14:03,8,-12.27,0.5,-1.2,8,-12.27,0.5,-1.2
+D. closing continuation @14:55,IM0000,14:55,141,5.513,0.277,5.28,141,5.513,0.277,5.28
