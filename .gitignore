@@ -25,6 +25,7 @@ intraminute/minute_of_day_pnl_isoos.csv
 ticker/open_breakdown/open_ticks_2months.csv
 ticker/open_breakdown/open_bars_all_2015_2026.csv
 ticker/open_breakdown/day_bars_2months.csv
+end/day_minutes_full.csv
 ticker/momentum_stats/buckets_all.csv
 
 # DB credentials — local only

@@ -57,15 +57,19 @@ import matplotlib.pyplot as plt
 FIGDIR = "/Users/zhuisabella/xn/end/figs"
 COLORS = {"IC0000": "tab:blue", "IF0000": "tab:orange", "IH0000": "tab:green", "IM0000": "tab:red"}
 
-fig, ax = plt.subplots(figsize=(9.5, 5.5))
+fig, ax = plt.subplots(figsize=(11, 6.5))
 for code in CODES:
     r = results[code]
     ax.plot(labels, r["mean"], marker="o", color=COLORS[code], label=f"{code} MEAN, all bad-tick days removed (n={r['n']})")
 ax.axhline(0, color="k", lw=0.8)
-ax.set_xticks(labels[::2])
+ax.set_xticks(labels)  # every minute, not every other -- so the exact minute of any dip is readable
 ax.tick_params(axis="x", rotation=45)
-ax.set_ylabel(f"mean price path relative to {labels[0]} (bp)")
+ax.set_xlabel("signal minute (time of day, HH:MM)", fontsize=11)
+ax.set_ylabel("mean forward price change relative to price @14:45 (basis points, bp)\n[positive = price is above its 14:45 level; negative = below it]", fontsize=10)
 ax.set_title(f"After removing every day with a >{THRESH_BP}bp single-minute move (bad ticks) anywhere in the session:\nmean path over the last 15 minutes still shows no reversal, holds/extends the gain into the close")
+ax.grid(True, which="major", axis="both", color="gray", alpha=0.3, linestyle="-", linewidth=0.6)
+ax.minorticks_on()
+ax.grid(True, which="minor", axis="y", color="gray", alpha=0.15, linestyle=":", linewidth=0.4)
 ax.legend(fontsize=8)
 plt.tight_layout()
 plt.savefig(f"{FIGDIR}/fig_verdict_clean_mean_path.png", dpi=140)

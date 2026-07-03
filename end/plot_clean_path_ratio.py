@@ -50,17 +50,21 @@ print(f"{'code':8s} {'group':7s} {'n':>5s}  (median ratio@14:45 split, bad-tick 
 for code, label, n in n_report:
     print(f"{code:8s} {label:7s} {n:5d}")
 
-fig, axes = plt.subplots(2, 2, figsize=(12, 8), sharex=True)
+fig, axes = plt.subplots(2, 2, figsize=(14, 10), sharex=True)
 for ax, code in zip(axes.flat, CODES):
     for label, ls, mk in [("smooth", "-", "o"), ("noisy", "--", "x")]:
         r = results[(code, label)]
         ax.plot(labels, r["path"], color=COLORS[code], ls=ls, marker=mk,
                  label=f"{label} (n={r['n']})")
     ax.axhline(0, color="k", lw=0.8)
-    ax.set_xticks(labels[::3])
-    ax.tick_params(axis="x", rotation=45)
-    ax.set_ylabel(f"path rel. to {labels[0]} (bp)")
-    ax.set_title(code)
+    ax.set_xticks(labels)  # every minute, not every 3rd -- so the exact minute of any dip is readable
+    ax.tick_params(axis="x", rotation=45, labelsize=8)
+    ax.set_xlabel("signal minute (time of day, HH:MM)", fontsize=9)
+    ax.set_ylabel("forward price change relative to price @14:45 (bp)", fontsize=9)
+    ax.set_title(code, fontsize=12)
+    ax.grid(True, which="major", axis="both", color="gray", alpha=0.3, linestyle="-", linewidth=0.6)
+    ax.minorticks_on()
+    ax.grid(True, which="minor", axis="y", color="gray", alpha=0.15, linestyle=":", linewidth=0.4)
     ax.legend(fontsize=8)
 fig.suptitle("Last 15 min, up>=1% from open @14:45, split by path/displacement ratio at 14:45\n(solid=smooth/efficient trend, dashed=noisy/choppy path; bad-tick days removed)")
 plt.tight_layout()
