@@ -25,9 +25,9 @@ for ax, code in zip(axes.ravel(), NAME):
     A = res[(res.code == code) & (res.model == "A")].sort_values("secs")
     B = res[(res.code == code) & (res.model == "B")].sort_values("secs")
     ax.plot(A.secs, A.r2_train, color="0.55", lw=1.4, marker="s", ms=4,
-            label="模型A(仅VOI) 训练内")
+            label="模型A（仅VOI）训练内")
     ax.plot(B.secs, B.r2_train, color=COL[code], lw=2, marker="o",
-            label="模型B(VOI+OIR+MPB) 训练内")
+            label="模型B（VOI+OIR+MPB）训练内")
     ax.plot(B.secs, B.r2_test_oos, color=COL[code], lw=2, ls="--", marker="^",
             label="模型B 样本外(2025-26)")
     ax.set_xscale("log"); ax.set_xticks([0.5, 2, 10, 60])
@@ -35,9 +35,14 @@ for ax, code in zip(axes.ravel(), NAME):
     ax.set_title(NAME[code], fontsize=10.5, fontweight="bold")
     ax.set_xlabel("预测期 k（未来k个快照的平均中间价变动）", fontsize=9)
     ax.set_ylabel("R²", fontsize=9); ax.legend(fontsize=8); ax.grid(True, alpha=.25)
-fig.suptitle("图81　盘口因子的真·预测R²（Shen 2015）—— 越短的预测期越可预测",
-             fontsize=12.5, fontweight="bold")
-fig.tight_layout(rect=(0, 0, 1, 0.95)); fig.savefig(f"{D}/fig81_VOI预测R2{SUF}.png", dpi=135); plt.close(fig)
+fig.suptitle("图81　盘口因子的真·预测R²（Shen 2015）—— 越短的预测期越可预测\n"
+             "VOI=队伍变化（流量）· OIR=队伍水平＝(qb−qa)/(qb+qa) · MPB=平均成交价−中间价（成交方向）",
+             fontsize=11, fontweight="bold")
+fig.text(0.5, 0.01,
+         "R²（决定系数）= 模型解释了未来价格波动的百分之几：0=什么都没解释，1=完美预测；"
+         "高频收益预测里 R² 几个百分点已属强信号，真正的关键是样本外仍成立且统计显著。",
+         ha="center", fontsize=8.5, color="0.35")
+fig.tight_layout(rect=(0, 0.03, 1, 0.95)); fig.savefig(f"{D}/fig81_VOI预测R2{SUF}.png", dpi=135); plt.close(fig)
 
 # fig82 — monthly stability (model B, k=20)
 mon = mon.dropna(subset=["r2_refit"]).copy()
