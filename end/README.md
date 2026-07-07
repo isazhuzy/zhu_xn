@@ -184,6 +184,76 @@ last-10-minutes melt-up on already-strong-up days for IF/IH/IM. Files:
 `deepdive_close_continuation.py` -> `deepdive_zoom_1430_1500.csv`,
 `deepdive_window_screen.csv`; `plot_close_continuation.py` -> figs.
 
+## Profit-taking hypothesis: direct order-flow & open-interest tests
+
+The path/displacement ratio was originally motivated by an intuition — "intraday
+traders who bought earlier flatten once price has risen enough, and that
+liquidation reverses the close" (获利了结). But path-ratio is a *confounded* proxy
+(path smoothness ≈ volatility, not liquidation). So we tested the profit-taking
+story **directly**, three ways — all reject it.
+
+### Aggressor order flow (`fetch_day_minutes_flow_ddb.py`, `flow_analysis.py`, `flow_symmetric.py`)
+
+Re-fetched full-history 1-min bars with per-minute aggressor volume
+(`m_nActBidVolume`/`m_nActAskVolume`, summed per minute; Act semantics resolved
+empirically — `actbid` is BUYER-initiated, corr(minute-ret, actbid−actask)=+0.357).
+Feature: trailing-30-min **sell-pressure imbalance** `(sell−buy)/(sell+buy)`, the
+direct footprint of longs hitting the bid to flatten. Real-time, no look-ahead.
+
+- **Up≥1% days, split at median sell-pressure at 14:45**
+  (`fig_flow_sellpressure_path.png`): high-sell-pressure days do **not** close
+  weaker — for IC/IF/IM they close **stronger** (corr(sellpressure, fwd) = +0.08 /
+  +0.08 / +0.02), only IH mildly negative. The per-minute scan `fig_flow_tstat.png`
+  shows the effect never reaches significance in the hypothesized (negative)
+  direction. Interpretation: aggressive selling into an up-day is **absorbed** by
+  strong buyers → the melt-up continues (reproduces the 14:55 continuation).
+- **Symmetric, both directions** (`fig_flow_symmetric.png`): up-days sell-pressure
+  and down-days buy-pressure (counter-move flow) vs signed reversal — mean corr ≈ 0
+  on both sides; down-days even mildly positive (bargain-buyers into a drop are also
+  absorbed → keeps falling). Same absorption mechanism, symmetric.
+
+### Continuous sweeps: sell-pressure vs P(price up) (`flow_prob_sweep.py`, `flow_prob_sweep_eod.py`)
+
+Instead of the median hi/lo split, sweep the sell-pressure imbalance across its full
+range (pooled, all days) and read off P(up). **The sign is horizon-dependent:**
+
+- Fixed horizons (`fig_flow_prob_sweep.png`): **next 1–5 min the curve rises**
+  (more sell-pressure → higher P(up): short-term absorption/mean-reversion);
+  **next 30 min it falls** (sustained selling → down-momentum). Crossover ~5–30 min.
+- To-close / EOD context (`fig_flow_prob_sweep_eod.png`): net-selling → modestly
+  **lower** P(close > now), diff only −2 to −4bp (IM the lone flat/positive
+  exception). A weak down-**momentum**, not reversal. Magnitudes are tiny
+  (P(up) ~0.44–0.56 only at moderate imbalance; ≈0.50 in the bulk) and these are
+  minute-pooled (autocorrelated) probabilities — shape is trustworthy, exact
+  significance is not.
+
+### Real open-interest confirmation (`fetch_oi_minutes_ddb.py`, `oi_analysis.py`)
+
+Aggressor selling can be *absorbed* (churn) with no net position change; genuine
+**position closing shows up as open interest falling**. Minute OI from
+`dfs://hft_future_realtime/RealtimeMinKLine` (`position` col; single-contract months
+so dominant contract per day = max EOD `totalVolume`; only **2025-01→2026-07** usable
+— 2024-H2 partitions throw persistent "too many open files"; afternoon session starts
+13:01 not 13:00). Two findings (`fig_oi_confirm.png`):
+
+- **The premise is false: OI GROWS into the close, not shrinks.** 13:01→15:00 OI
+  change is **+6 to +8% on up-days, +6 to +9.5% on down-days, +4.6 to +7.4% all
+  days**, every contract. These index futures are institutional hedging/overnight
+  vehicles; the last hour is net **position-building**, so "day-traders flatten by
+  the close" simply doesn't hold here.
+- Even where recent OI does decline (trailing-30min, genuine closing), it does **not**
+  predict reversal: corr(liquidation, signed fwd) ≈ 0 to slightly **positive**
+  (up: +.05/+.02/+.08/−.00, down: +.11/+.09/+.06/+.09 for IC/IF/IH/IM), t<−2 minutes
+  at noise level.
+
+**Verdict:** the 获利了结→反转 hypothesis leaves no footprint in aggressor flow,
+its symmetric analogue, the probability sweeps, or the direct OI measure. Root cause:
+net accumulation into the close + strong-buyer absorption → **continuation (melt-up),
+not liquidation reversal**. The intuition may hold for retail intraday equities; it
+does not for CFFEX index futures. (path-ratio direction abandoned; the filter-free
+sweep `filter_free_pathratio.py` is also weak — dropping the up-filter turns the ratio
+into ≈1/|displacement|.)
+
 ## Files
 
 - `fetch_day_minutes_ddb.py` — full-history whole-session 1-min bar fetch (run
@@ -199,3 +269,19 @@ last-10-minutes melt-up on already-strong-up days for IF/IH/IM. Files:
   `filter_variants_summary.csv`.
 - `filter_path_ratio.py` — 路程/位移比 (path-length/displacement) split +
   continuous correlation check; writes `filter_path_ratio_summary.csv`.
+- `filter_free_pathratio.py` — path-ratio reversal test with the up≥1% filter
+  removed (symmetric ±move floor, signed fwd); writes `ff_pathratio_summary.csv`,
+  `figs/fig_ff_pathratio_tstat.png`.
+- `fetch_day_minutes_flow_ddb.py` — full-history 1-min bars + per-minute aggressor
+  volume; writes `day_minutes_flow_full.csv`.
+- `flow_analysis.py` / `flow_plot.py` / `flow_tstat_plot.py` — sell-pressure
+  profit-taking test on up≥1% days; `flow_summary.csv`,
+  `figs/fig_flow_sellpressure_path.png`, `figs/fig_flow_tstat.png`.
+- `flow_symmetric.py` — same test for both up (sell-pressure) and down (buy-pressure)
+  days; `flow_symmetric_summary.csv`, `figs/fig_flow_symmetric.png`.
+- `flow_prob_sweep.py` / `flow_prob_sweep_eod.py` — sweep sell-pressure vs P(price up)
+  at fixed horizons / to-close; `flow_prob_sweep*.csv`, `figs/fig_flow_prob_sweep*.png`.
+- `fetch_oi_minutes_ddb.py` — minute open-interest (2025-01→2026-07, RealtimeMinKLine);
+  writes `oi_minutes.csv`.
+- `oi_analysis.py` — real-OI confirmation of the profit-taking test (both directions);
+  `oi_summary.csv`, `figs/fig_oi_confirm.png`.

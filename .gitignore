@@ -16,6 +16,10 @@ ICIFIHIM/
 # DolphinDB raw dumps that are too big to version (keep local)
 *_20230104_20230304.csv
 
+# Big intermediate CSVs — exceed GitHub limits, keep repo light (local only)
+end/day_minutes_flow_full.csv
+end/oi_minutes.csv
+
 # Big intermediate CSVs moved to iCloud (~/Library/.../xn-data/) — keep repo light
 intraminute/minute_conditional_isoos.csv
 intraminute/step3_extcurve.csv
