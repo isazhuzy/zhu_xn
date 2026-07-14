@@ -22,8 +22,8 @@ PILOT = os.environ.get("PILOT") == "1"
 SUF = "_pilot" if PILOT else ""
 D = "/Users/zhuisabella/xn/prediction"
 BAR = 10                                       # base bar seconds
-LOOK = {1: "10s", 6: "1min", 30: "5min"}       # accumulated-flow lookback (bars)
-HOR = {1: "10s", 6: "1min", 30: "5min", 90: "15min"}   # forward horizon (bars)
+LOOK = {6: "1min", 30: "5min", 120: "20min"}   # accumulated-flow lookback (bars)
+HOR = {2: "20s", 6: "1min", 30: "5min", 90: "15min", 120: "20min"}   # forward horizon (bars)
 TREND = (2024, 12)
 MONTHS = ([(2024, 11), (2025, 1)] if PILOT else
           [(y, m) for y in range(2020, 2027) for m in range(1, 13) if (2020, 1) <= (y, m) <= (2026, 5)])
