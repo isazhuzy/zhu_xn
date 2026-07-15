@@ -1,5 +1,9 @@
-from future_30mins.py import *
-from tick_to_min.py import *
+import os
+import numpy as np
+import pandas as pd
+import matplotlib; matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from matplotlib import font_manager as fm
 
 _av = {f.name for f in fm.fontManager.ttflist}
 for _f in ["Arial Unicode MS", "PingFang HK", "Heiti TC", "STHeiti", "Songti SC"]:
@@ -7,7 +11,7 @@ for _f in ["Arial Unicode MS", "PingFang HK", "Heiti TC", "STHeiti", "Songti SC"
         matplotlib.rcParams["font.sans-serif"] = [_f]; break
 matplotlib.rcParams["axes.unicode_minus"] = False
 
-D = "/Users/zhuisabella/xn/last"
+D = "/Users/zhuisabella/xn/manual"
 CODE = os.environ.get("CODE", "IF0000")
 H = int(os.environ.get("H", "30"))
 SUF = os.environ.get("SUF", "")
