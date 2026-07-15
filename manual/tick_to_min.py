@@ -47,7 +47,7 @@ def to_session_bars(b, code):
     b["vol"] = b.groupby(day)["accvol"].diff() #accum volume after per min ends
     b["amt"] = b.groupby(day)["accamt"].diff()
     first_of_day = day != day.shift()
-    b.loc[first_of_day, ["vol", "amt"]] = np.nan   # no baseline before day's 1st bar
+    b.loc[first_of_day, ["vol", "amt"]] = np.nan
     hm = b.ts.dt.hour * 100 + b.ts.dt.minute
 
     #filter out time
