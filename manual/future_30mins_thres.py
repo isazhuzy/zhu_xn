@@ -2,7 +2,7 @@ from tick_to_min import *
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib import font_manager as fm
-from matplotlib.ticker import AutoMinorLocator
+from matplotlib.ticker import AutoMinorLocator, MultipleLocator
 
 sys.path.insert(0, "/Users/zhuisabella/xn/prediction")
 sys.path.insert(0, "/Users/zhuisabella/xn/manual")
@@ -19,6 +19,7 @@ SUF = "_pilot" if PILOT else ""
 D = "/Users/zhuisabella/xn/manual"
 CODES = ["IF0000", "IC0000", "IH0000", "IM0000"]
 H = 30
+THRESH = 0.001
 START, END = ("2024.06.01", "2024.06.30") if PILOT else ("2024.01.01", "2024.12.31")
 
 sess = ddb.session(HOST, PORT); sess.login(USER, PW)
@@ -31,9 +32,9 @@ for CODE in CODES:
     day = b.ts.dt.normalize()
     pm = (b.ts.dt.hour >= 13).astype(int) #0 for morning, 1 for afternoon
     g = b.groupby([day, pm])["mid_close"]
-    sig = np.sign(g.diff()) #direction
-    sig = sig.replace(0, np.nan) # flat -> no trade
-    fwd = (g.shift(-H) - b["mid_close"]) / b["mid_close"] * 1e4   # next-H-min move, bps
+    ret = g.pct_change(fill_method=None) # minute t's return; don't ffill NaN (limit-up) mids
+    sig = np.sign(ret).where(ret.abs() > THRESH)
+    fwd = (g.shift(-H) - b["mid_close"]) / b["mid_close"] * 1e4
     b["strat"] = sig * fwd
 
     b["hm"] = b.ts.dt.strftime("%H:%M")
@@ -41,7 +42,7 @@ for CODE in CODES:
            .agg(mean="mean", sd="std", n="count").reset_index())
     s["se"] = s.sd / np.sqrt(s.n)
     s["t"] = s["mean"] / s["se"]
-    s.to_csv(f"{D}/fwd{H}_momentum_{CODE}{SUF}.csv", index=False)
+    s.to_csv(f"{D}/fwd{H}_momentum_{CODE}{SUF}_thres.csv", index=False)
 
     pooled = b["strat"].dropna()
     print(f"{CODE} {START}..{END}  H={H}min  trades={len(pooled)}  days={day.nunique()}")
@@ -56,16 +57,16 @@ for CODE in CODES:
     ax.plot(x, s["mean"], lw=1.4, color="#4C72B0", label="均值")
     tick = [i for i, h in enumerate(s.hm) if h.endswith(("00", "15", "30", "45"))]
     ax.set_xticks(tick); ax.set_xticklabels(s.hm.iloc[tick], fontsize=7)
-    ax.xaxis.set_minor_locator(AutoMinorLocator(3))   # 5-min minor gridlines
-    ax.yaxis.set_minor_locator(AutoMinorLocator(2))
     ax.set_xlabel("日内分钟 t（信号 = 第 t 分钟方向）")
     ax.set_ylabel(f"动量策略收益（bps，持有 {H} 分钟）")
-    ax.set_title(f"{CODE} 分钟动量：sign(第t分钟涨跌) × 未来{H}分钟平均收益"
+    ax.set_title(f"{CODE} 分钟动量：sign(第t分钟涨跌) × 未来{H}分钟平均收益, 阈值 {THRESH:.1%}"
                  f"（{START}–{END}）", fontsize=11, fontweight="bold")
-    ax.legend()
+    ax.xaxis.set_minor_locator(AutoMinorLocator(3))    # 2 minor ticks between majors -> 10-min steps
+    ax.yaxis.set_minor_locator(AutoMinorLocator(2))    # halve each y interval
     ax.grid(True, which="major", alpha=.35)
-    ax.grid(True, which="minor", alpha=.12, lw=.5)
-    fig.tight_layout(); fig.savefig(f"{D}/fig_fwd{H}_momentum_{CODE}{SUF}.png", dpi=135)
+    ax.grid(True, which="minor", alpha=.12, lw=.5)     # fainter so it doesn't drown the data
+    ax.legend()
+    fig.tight_layout(); fig.savefig(f"{D}/fig_fwd{H}_momentum_{CODE}{SUF}_thres.png", dpi=135)
     plt.close(fig)
-    print(f"saved fwd{H}_momentum_{CODE}{SUF}.csv + fig")
+    print(f"saved fwd{H}_momentum_{CODE}{SUF}_thres.csv + fig")
 
