@@ -19,7 +19,7 @@ SUF = "_pilot" if PILOT else ""
 D = "/Users/zhuisabella/xn/manual"
 CODES = ["IF0000", "IC0000", "IH0000", "IM0000"]
 H = 30
-START, END = ("2024.06.01", "2024.06.30") if PILOT else ("2024.01.01", "2024.12.31")
+START, END = ("2024.06.01", "2024.06.30") if PILOT else ("2010.01.01", "2026.07.15")
 
 sess = ddb.session(HOST, PORT); sess.login(USER, PW)
 bars = {c: to_session_bars(fetch_min_bars(sess, c, START, END), c) for c in CODES}
