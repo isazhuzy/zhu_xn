@@ -6,7 +6,7 @@ import dolphindb as ddb
 
 sys.path.insert(0, "/Users/zhuisabella/xn/prediction")
 from ddb_config import HOST, PORT, USER, PW
-from lob_common import MULT
+from lob_common import MULT #contract multiplier dict
 PILOT = os.environ.get("PILOT") == "1"
 D = "/Users/zhuisabella/xn/manual"
 CODE = os.environ.get("CODE", "IF0000")
@@ -14,7 +14,7 @@ START, END = ("2024.06.01", "2024.06.30") if PILOT else ("2024.01.01", "2024.12.
 
 def fetch_min_bars(sess, code, start, end):
     """SQL"""
-    #check, need to change to iif
+    #IF limit-up prob fixed
     q = f"""
     pt = loadTable("dfs://hft_future_ts","TickPartitioned")
     select first(m_nPrice)    as open,
@@ -39,10 +39,11 @@ def to_session_bars(b, code):
     """session clean up, SQL to per minute bars"""
     b = b.copy()
     b["ts"] = pd.to_datetime(b["ts"])
-    # fold 11:30:00 / 15:00:00 close-snapshot bars into 11:29 / 14:59
+    #fold 11:30:00 / 15:00:00 close-snapshot bars into 11:29 / 14:59
     hm = b.ts.dt.hour * 100 + b.ts.dt.minute #switch to whole numbers
     b.loc[hm == 1130, "ts"] -= pd.Timedelta(minutes=1)
-    b.loc[hm == 1500, "ts"] -= pd.Timedelta(minutes=1) #changing labels
+    b.loc[hm == 1500, "ts"] -= pd.Timedelta(minutes=1)
+
     b = b.groupby(["code", "ts"], as_index=False).agg(
         open=("open", "first"), high=("high", "max"), low=("low", "min"),
         close=("close", "last"), accvol=("accvol", "last"), accamt=("accamt", "last"),
@@ -91,7 +92,7 @@ def check_one_day(sess, code, day, bars):
 
 if __name__ == "__main__":
     sess = ddb.session(HOST, PORT); sess.login(USER, PW)
-    raw = fetch_min_bars(sess, CODE, START, END)
+    raw = fetch_min_bars(sess, CODE, START, END) #crosscheck
     bars = to_session_bars(raw, CODE)
     ok = check_one_day(sess, CODE, START.rsplit(".", 1)[0] + ".03", bars)
     sess.close()

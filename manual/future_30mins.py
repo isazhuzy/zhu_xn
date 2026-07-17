@@ -2,7 +2,7 @@ from tick_to_min import *
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib import font_manager as fm
-from matplotlib.ticker import AutoMinorLocator
+
 
 sys.path.insert(0, "/Users/zhuisabella/xn/prediction")
 sys.path.insert(0, "/Users/zhuisabella/xn/manual")
@@ -19,7 +19,7 @@ SUF = "_pilot" if PILOT else ""
 D = "/Users/zhuisabella/xn/manual"
 CODES = ["IF0000", "IC0000", "IH0000", "IM0000"]
 H = 30
-START, END = ("2024.06.01", "2024.06.30") if PILOT else ("2010.01.01", "2026.07.15")
+START, END = ("2024.06.01", "2024.06.30") if PILOT else ("2024.01.01", "2024.12.31")
 
 sess = ddb.session(HOST, PORT); sess.login(USER, PW)
 bars = {c: to_session_bars(fetch_min_bars(sess, c, START, END), c) for c in CODES}
@@ -54,17 +54,17 @@ for CODE in CODES:
     # ax.fill_between(x, s["mean"] - 2 * s.se, s["mean"] + 2 * s.se,
     #                 color="#4C72B0", alpha=.25, label="±2·se")
     ax.plot(x, s["mean"], lw=1.4, color="#4C72B0", label="均值")
-    tick = [i for i, h in enumerate(s.hm) if h.endswith(("00", "15", "30", "45"))]
-    ax.set_xticks(tick); ax.set_xticklabels(s.hm.iloc[tick], fontsize=7)
-    ax.xaxis.set_minor_locator(AutoMinorLocator(3))   # 5-min minor gridlines
-    ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+    tick = [i for i, h in enumerate(s.hm) if h.endswith(("00", "30"))]
+    ax.set_xticks(tick); ax.set_xticklabels(s.hm.iloc[tick], fontsize=8)
     ax.set_xlabel("日内分钟 t（信号 = 第 t 分钟方向）")
     ax.set_ylabel(f"动量策略收益（bps，持有 {H} 分钟）")
     ax.set_title(f"{CODE} 分钟动量：sign(第t分钟涨跌) × 未来{H}分钟平均收益"
                  f"（{START}–{END}）", fontsize=11, fontweight="bold")
-    ax.legend()
+    ax.xaxis.set_minor_locator(AutoMinorLocator(3))    # 2 minor ticks between majors -> 10-min steps
+    ax.yaxis.set_minor_locator(AutoMinorLocator(2))    # halve each y interval
     ax.grid(True, which="major", alpha=.35)
-    ax.grid(True, which="minor", alpha=.12, lw=.5)
+    ax.grid(True, which="minor", alpha=.12, lw=.5)     # fainter so it doesn't drown the data
+    ax.legend()
     fig.tight_layout(); fig.savefig(f"{D}/fig_fwd{H}_momentum_{CODE}{SUF}.png", dpi=135)
     plt.close(fig)
     print(f"saved fwd{H}_momentum_{CODE}{SUF}.csv + fig")
