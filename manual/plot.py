@@ -22,6 +22,8 @@ CODE = os.environ.get("CODE", "IF0000")
 H = int(os.environ.get("H", "30"))
 SUF = os.environ.get("SUF", "")
 WHAT = os.environ.get("WHAT", "mom")
+XRAW = os.environ.get("XRAW") == "1"      # voi fig: x = raw factor value not rank %
+FACTOR = os.environ.get("FACTOR", "voi")  # which factor's cumsum curve to draw
 NAME = {"IC0000": "IC 中证500", "IF0000": "IF 沪深300",
         "IH0000": "IH 上证50", "IM0000": "IM 中证1000"}
 
@@ -47,7 +49,8 @@ def plot_momentum():
 
 
 def plot_voi_cumsum():
-    cv = pd.read_csv(f"{D}/voi_cumsum_curve{SUF}.csv")
+    F = FACTOR.upper()
+    cv = pd.read_csv(f"{D}/{FACTOR}_cumsum_curve{SUF}.csv")
     # for k fwd
     ks = sorted(int(c[3:]) for c in cv.columns if c.startswith("cum"))
     pal = ["0.6", "#27ae60", "#e08a3c", "#4C72B0", "#c0392b", "#8e44ad"]
@@ -59,7 +62,7 @@ def plot_voi_cumsum():
         s = cv[cv.code == code].sort_values("rank")
         if s.empty:
             ax.set_axis_off(); continue
-        x = s.q * 100
+        x = s[FACTOR] if XRAW else s.q * 100
         for k in ks:
             ax.plot(x, s[f"cum{k}"], color=kcol[k], lw=1.8,
                     label=f"k={k} ({k*0.5:g}秒)")
@@ -69,28 +72,39 @@ def plot_voi_cumsum():
         #                label="VOI=0 区间")
         ax.axhline(0, color="k", lw=.6)
         imin = s[f"cum{kmain}"].idxmin()    # bottom of the check mark
-        ax.plot(s.q[imin] * 100, s[f"cum{kmain}"][imin], "v",
+        ax.plot(x[imin], s[f"cum{kmain}"][imin], "v",
                 color=kcol[kmain], ms=7)
         # ax.annotate(f"最低点 VOI≈{s.voi[imin]:.0f}",
         #             (s.q[imin] * 100, s[f"cum{kmain}"][imin]),
         #             textcoords="offset points", xytext=(6, -12),
         #             fontsize=8, color="0.3")
-        top = ax.secondary_xaxis("top")     # VOI value living at each percentile
-        qs = [1, 10, 30, 50, 70, 90, 99]
-        vals = np.interp(qs, s.q * 100, s.voi)
-        top.set_xticks(qs)
-        top.set_xticklabels([f"{v:.0f}" for v in vals], fontsize=7.5)
-        top.set_xlabel("该分位处的 VOI 值（手）", fontsize=8, color="0.35")
+        if XRAW:
+            if FACTOR == "voi":
+                # linear within ±10 lots (where ~98% of ticks live), log beyond
+                ax.set_xscale("symlog", linthresh=10)
+                ax.set_xlabel("VOI（手）｜±10内线性，两侧对数", fontsize=9)
+            else:                               # oir is bounded [-1,1]: linear is fine
+                ax.set_xlabel(f"{F}", fontsize=9)
+            ax.axvline(0, color="0.7", lw=.8)
+        else:
+            top = ax.secondary_xaxis("top")     # factor value living at each percentile
+            qs = [1, 10, 30, 50, 70, 90, 99]
+            vals = np.interp(qs, s.q * 100, s[FACTOR])
+            fmt = "{:.0f}" if FACTOR == "voi" else "{:.2f}"
+            top.set_xticks(qs)
+            top.set_xticklabels([fmt.format(v) for v in vals], fontsize=7.5)
+            top.set_xlabel(f"该分位处的 {F} 值", fontsize=8, color="0.35")
+            ax.set_xlabel(f"{F} 排序（%）", fontsize=9)
         ax.set_title(f"{NAME[code]}   n={s.n_total.iloc[0]:,}", fontsize=10.5,
                      fontweight="bold")
-        ax.set_xlabel("VOI 排序（%）", fontsize=9)
         ax.set_ylabel("未来价格变动cumsum（tick）", fontsize=9)
         ax.legend(fontsize=8, loc="upper center"); ax.grid(True, alpha=.25)
-    fig.suptitle("VOI 排序 → 未来k个快照价格变动的累计和\n",
+    fig.suptitle(f"{F} 排序 → 未来k个快照价格变动的累计和\n",
                  fontsize=12, fontweight="bold")
     fig.tight_layout(rect=(0, 0, 1, 0.94))
-    fig.savefig(f"{D}/fig_voi_cumsum{SUF}.png", dpi=135); plt.close(fig)
-    print(f"saved fig_voi_cumsum{SUF}.png  (k = {ks})")
+    raw = "_raw" if XRAW else ""
+    fig.savefig(f"{D}/fig_{FACTOR}_cumsum{raw}{SUF}.png", dpi=135); plt.close(fig)
+    print(f"saved fig_{FACTOR}_cumsum{raw}{SUF}.png  (k = {ks})")
 
 
 if __name__ == "__main__":

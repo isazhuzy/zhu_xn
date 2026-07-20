@@ -8,10 +8,11 @@ import dolphindb as ddb
 
 sys.path.insert(0, "/Users/zhuisabella/xn/prediction")
 from ddb_config import HOST, PORT, USER, PW
-from lob_common import TICK, CODES
+from lob_common import TICK, CODES, MULT
 
 PILOT = os.environ.get("PILOT") == "1"
 PRICE = os.environ.get("PRICE", "last") #or mid
+FACTOR = os.environ.get("FACTOR", "voi") #or oir
 SUF = "_pilot" if PILOT else ""
 D = "/Users/zhuisabella/xn/manual"
 K_FWD = [1, 5, 10,20] #500ms
@@ -31,7 +32,8 @@ def fetch(sess, code, yr, mo):
     pt=loadTable("dfs://hft_future_ts","TickPartitioned")
     select m_nDatetime as ts, m_nPrice as px,
            m_nBidPrice as pb, m_nBidVolume as qb,
-           m_nAskPrice as pa, m_nAskVolume as qa
+           m_nAskPrice as pa, m_nAskVolume as qa,
+           m_iVolume as vol, m_iTurnover as amt
     from pt where code_init=`{code[:2]}, code=`{code},
           m_nDatetime>={yr}.{mo:02d}.01T00:00:00,
           m_nDatetime<={yr}.{mo:02d}.{last:02d}T23:59:59,
@@ -71,6 +73,24 @@ def add_voi(df):
     return df
 
 
+def add_oir(df):
+    """book-shape imbalance, no history needed: +1 all-bid .. -1 all-ask"""
+    df["oir"] = (df.qb - df.qa) / (df.qb + df.qa)
+    return df
+
+
+def add_mpb(df, code):
+    """avg trade price this 500ms vs avg of the last two mids, in ticks.
+    vol==0 (no trades) -> carry last trade price forward within the session;
+    session start before any trade -> fall back to mid (mpb ~ 0)."""
+    g = df.groupby("gid", sort=False)
+    df["mid_tk"] = (df.pb + df.pa) / (2 * TICK)
+    tp = np.where(df.vol > 0, df.amt / (df.vol * MULT[code[:2]]), np.nan) / TICK
+    tp = pd.Series(tp, index=df.index).groupby(df["gid"]).ffill().fillna(df["mid_tk"])
+    df["mpb"] = tp - (df["mid_tk"] + g["mid_tk"].shift(1)) / 2
+    return df
+
+
 def add_fwd(df):
     """Future price change per tick:
         dy_k(t) = price(t+k) - price(t)
@@ -98,30 +118,35 @@ if __name__ == "__main__":
             df = prep(df)
             if df.empty:
                 continue
-            df = add_voi(df)
+            if FACTOR == "voi":
+                df = add_voi(df)
+            elif FACTOR == "oir":
+                df = add_oir(df)
+            else:
+                df = add_mpb(df, code)
             df = add_fwd(df)
-            v = df.dropna(subset=["voi"] + dycols)
-            parts.append(v[["voi"] + dycols].astype("float32"))
+            v = df.dropna(subset=[FACTOR] + dycols)
+            parts.append(v[[FACTOR] + dycols].astype("float32"))
             print(f"{code} {yr}-{mo:02d}: {len(v):,} ticks", flush=True)
         if not parts:
             continue
         a = pd.concat(parts, ignore_index=True); del parts
         n = len(a)
 
-        order = np.argsort(a["voi"].to_numpy(), kind="stable")
-        voi_s = a["voi"].to_numpy()[order]
+        order = np.argsort(a[FACTOR].to_numpy(), kind="stable")
+        voi_s = a[FACTOR].to_numpy()[order]
         idx = np.unique(np.linspace(0, n - 1, NPTS).astype(np.int64))
         out = pd.DataFrame({"code": code, "rank": idx + 1,
                             "q": (idx + 1) / n,
-                            "voi": voi_s[idx], "n_total": n})
+                            FACTOR: voi_s[idx], "n_total": n})
         for k in K_FWD:
             cum = np.cumsum(a[f"dy{k}"].to_numpy()[order]) #cumsum
             out[f"cum{k}"] = cum[idx]
             print(f"{code} k={k}: end={cum[-1]:,.0f} ticks, "
                   f"min={cum.min():,.0f} at q={(cum.argmin()+1)/n:.3f} "
-                  f"(voi={voi_s[cum.argmin()]:.0f})", flush=True)
+                  f"({FACTOR}={voi_s[cum.argmin()]:.2f})", flush=True)
         curves.append(out); del a
     sess.close()
     pd.concat(curves, ignore_index=True).to_csv(
-        f"{D}/voi_cumsum_curve{SUF}.csv", index=False)
-    print(f"saved voi_cumsum_curve{SUF}.csv  (price basis: {PRICE})")
+        f"{D}/{FACTOR}_cumsum_curve{SUF}.csv", index=False)
+    print(f"saved {FACTOR}_cumsum_curve{SUF}.csv  (price basis: {PRICE})")
