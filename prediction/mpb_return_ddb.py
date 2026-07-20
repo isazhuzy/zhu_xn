@@ -17,7 +17,7 @@ D = "/Users/zhuisabella/xn/prediction"
 K = [1, 4, 20, 120]
 SECS = {1: 0.5, 4: 2, 20: 10, 120: 60}
 TREND = (2024, 12)
-BW, CAP = 0.1, 3.0                                   # MPB scatter bin width / cap (ticks)
+BW, CAP = 0.25, 3.0        # bin width ALIGNED to MPB's quarter-tick lattice / cap (ticks)
 
 
 def build(df, code):
@@ -71,7 +71,9 @@ if __name__ == "__main__":
                                                         (xv * yv).sum(), (xv * xv).sum(), (yv * yv).sum()]
             y4 = df["y4"].to_numpy(float)
             m = np.isfinite(x) & np.isfinite(y4) & (np.abs(x) <= CAP)
-            b = (np.round(x[m] / BW) * BW).round(2)
+            # floor(x/BW + .5) = always round half UP: keeps every lattice mass in
+            # its own bin (np.round's half-to-even sent 1.25->1.2 but 1.75->1.8)
+            b = (np.floor(x[m] / BW + 0.5) * BW).round(2)
             for bc, yy in zip(b, y4[m]):
                 s = scat.setdefault((code, float(bc)), [0.0, 0]); s[0] += yy; s[1] += 1
         print(f"{yr}-{mo:02d} done ({phase})", flush=True)
