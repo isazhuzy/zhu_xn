@@ -2,6 +2,7 @@ from tick_to_min import *
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib import font_manager as fm
+from matplotlib.ticker import AutoMinorLocator
 
 
 sys.path.insert(0, "/Users/zhuisabella/xn/prediction")
@@ -19,7 +20,7 @@ SUF = "_pilot" if PILOT else ""
 D = "/Users/zhuisabella/xn/manual"
 CODES = ["IF0000", "IC0000", "IH0000", "IM0000"]
 H = 30
-START, END = ("2024.06.01", "2024.06.30") if PILOT else ("2024.01.01", "2024.12.31")
+START, END = ("2024.06.01", "2024.06.30") if PILOT else ("2010.01.01", "2026.07.15")
 
 sess = ddb.session(HOST, PORT); sess.login(USER, PW)
 bars = {c: to_session_bars(fetch_min_bars(sess, c, START, END), c) for c in CODES}
@@ -29,8 +30,7 @@ for CODE in CODES:
     b = bars[CODE]
 
     day = b.ts.dt.normalize()
-    pm = (b.ts.dt.hour >= 13).astype(int) #0 for morning, 1 for afternoon
-    g = b.groupby([day, pm])["mid_close"]
+    g = b.groupby(day)["mid_close"]   # day-only fence: windows cross the lunch break
     sig = np.sign(g.diff()) #direction
     sig = sig.replace(0, np.nan) # flat -> no trade
     fwd = (g.shift(-H) - b["mid_close"]) / b["mid_close"] * 1e4   # next-H-min move, bps

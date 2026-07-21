@@ -1,9 +1,6 @@
-"""mpb_cumsum_plot.py — MPB-sorted cumulative price-change curve.
-
+"""
 Reads xn/manual/mpb_cumsum_curve[_pilot].csv (made by xn/manual/voi_cumsum.py
-with FACTOR=mpb). Horizons auto-detected from the cum* columns. Percentile
-x-axis by default; XRAW=1 plots against the raw MPB value (linear — MPB is
-tick-bounded, unlike VOI) which exposes the quarter-tick lattice staircase.
+with FACTOR=mpb). 
 
 Run: SUF=_pilot /Users/zhuisabella/xn/.venv/bin/python mpb_cumsum_plot.py
 """

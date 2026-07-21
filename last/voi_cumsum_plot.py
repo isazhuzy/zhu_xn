@@ -33,16 +33,16 @@ for ax, code in zip(axes.ravel(), NAME):
     for k in (1, 20, 120):
         ax.plot(x, s[f"cum{k}"], color=KCOL[k], lw=1.8, label=KLAB[k])
     # shade the VOI==0 zone (huge mass of "nothing happened" ticks)
-    z = s[s.voi == 0]
-    if len(z):
-        ax.axvspan(z.q.min() * 100, z.q.max() * 100, color="0.85", alpha=.5,
-                   label="VOI=0 区间")
-    ax.axhline(0, color="k", lw=.6)
+    # z = s[s.voi == 0]
+    # if len(z):
+    #     ax.axvspan(z.q.min() * 100, z.q.max() * 100, color="0.85", alpha=.5,
+    #                label="VOI=0 区间")
+    # ax.axhline(0, color="k", lw=.6)
     # mark the bottom of the check mark for the main horizon k=20
     imin = s["cum20"].idxmin()
     ax.plot(s.q[imin] * 100, s.cum20[imin], "v", color="#4C72B0", ms=7)
-    ax.annotate(f"最低点 VOI≈{s.voi[imin]:.0f}", (s.q[imin] * 100, s.cum20[imin]),
-                textcoords="offset points", xytext=(6, -12), fontsize=8, color="0.3")
+    # ax.annotate(f"最低点 VOI≈{s.voi[imin]:.0f}", (s.q[imin] * 100, s.cum20[imin]),
+    #             textcoords="offset points", xytext=(6, -12), fontsize=8, color="0.3")
     # top axis: what VOI value sits at each rank percentile
     top = ax.secondary_xaxis("top")
     qs = [1, 10, 30, 50, 70, 90, 99]

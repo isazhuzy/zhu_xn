@@ -1,9 +1,9 @@
 """fwd_matrix.py — (minute-of-day x day) matrix of the H=30min momentum trade returns.
 
 Same computation as future_30mins.py (sign of minute t's mid move x forward H-min
-return, fenced inside (day, session) so nothing crosses lunch/overnight), but instead
-of averaging, every individual (minute, day) trade return is kept and pivoted into a
-matrix: rows = clock minute (178 valid cells), columns = trading days, cells = bps.
+return, fenced per day only — windows DO cross the lunch break, nothing crosses
+overnight), but instead of averaging, every individual (minute, day) trade return is
+kept and pivoted into a matrix: rows = clock minute, columns = trading days, cells = bps.
 Row-mean of this matrix == the curve plotted by future_30mins.py.
 NaN cell = flat signal minute, invalid (limit-up) mid, or missing minute.
 Run: PILOT=1 /Users/zhuisabella/xn/.venv/bin/python fwd_matrix.py   (env: CODE)
@@ -22,8 +22,7 @@ b = to_session_bars(fetch_min_bars(sess, CODE, START, END), CODE)
 sess.close()
 
 day = b.ts.dt.normalize()
-pm = (b.ts.dt.hour >= 13).astype(int)
-g = b.groupby([day, pm])["mid_close"]
+g = b.groupby(day)["mid_close"]   # day-only fence: windows cross the lunch break
 sig = np.sign(g.diff())
 sig = sig.replace(0, np.nan)                          # flat minute -> no trade
 fwd = (g.shift(-H) - b["mid_close"]) / b["mid_close"] * 1e4

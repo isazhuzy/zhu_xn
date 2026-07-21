@@ -30,8 +30,7 @@ for CODE in CODES:
     b = bars[CODE]
 
     day = b.ts.dt.normalize()
-    pm = (b.ts.dt.hour >= 13).astype(int) #0 for morning, 1 for afternoon
-    g = b.groupby([day, pm])["mid_close"]
+    g = b.groupby(day)["mid_close"]   # day-only fence: windows cross the lunch break
     ret = g.pct_change(fill_method=None) # minute t's return; don't ffill NaN (limit-up) mids
     sig = np.sign(ret).where(ret.abs() > THRESH)
     fwd = (g.shift(-H) - b["mid_close"]) / b["mid_close"] * 1e4
